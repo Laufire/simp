@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/Laufire/simp/issues"
   },
-  "homepage": "https://github.com/Laufire/simp#readme"
+  "homepage": "https://github.com/Laufire/simp#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
 }
