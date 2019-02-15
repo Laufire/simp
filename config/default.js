@@ -9,5 +9,7 @@ module.exports = {
     cert: 'config/ssl/cert.pem',
   },
 
+  sitesDir: './sites', // #Note: This has to be a relative path to the CWD.
+
   Sites: {},
 }

@@ -35,9 +35,12 @@ module.exports = new function() {
 
     for(let [siteName, Site] of Object.entries(Sites)) {
       
-      if(Site.static && typeof(Site.aliasOf) === 'undefined') { // Setup static sites.
+      let sitePrefix = siteName ? `/${siteName}` : '';
+      let siteDir = Site.dir || `${Config.sitesDir}${sitePrefix}`;
         
-        app.use(siteName ? ('/' + siteName) : '', express.static(Site.dir));
+      if(typeof(Site.aliasOf) === 'undefined') {
+        
+        app.use(sitePrefix, Site.static ? express.static(siteDir) : require(siteDir));
       }
     }
 
@@ -54,6 +57,8 @@ module.exports = new function() {
 
     let Options = Server.Options;
     let Config = normalizeConfig(ConfigExtensions)
+
+    Config.sitesDir = `${process.cwd()}/${Config.sitesDir}`;
 
     if(Config.https) {
       Options.key = fs.readFileSync(Config.SSLPaths.key);
