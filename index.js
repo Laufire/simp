@@ -9,13 +9,13 @@ module.exports = new function() {
     Options: {}
   };
 
-  this.start = (configExtensions) => {
+  this.start = (configExtensions = {}) => {
 
     const Config = Object.assign({}, DefaultConfig, configExtensions);
 
     let Options = Server.Options;
 
-    if(Config.SSLPaths) {
+    if(Config.https) {
       Options.key = fs.readFileSync(Config.SSLPaths.key);
       Options.cert = fs.readFileSync(Config.SSLPaths.cert);
 
@@ -28,7 +28,7 @@ module.exports = new function() {
       Server.createServer = require('http').createServer;
     }
 
-    Server.port = Config.port || Server.port;
+    Server.port = configExtensions.port || Server.port;
 
     Server.createServer(function (req, res) {
       console.log(req.url);
