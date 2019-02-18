@@ -12,25 +12,57 @@ module.exports = new function() {
     Options: {}
   };
 
+  /* Helpers */
+  const respondError = (req, res) => {
+    res.statusCode = 400;
+    res.end();
+  }
+
+  const isDefined = (x) => typeof(x) !== 'undefined';
+
+  /* Tasks */
   const normalizeConfig = (ConfigExtensions) => {
 
-    let Config = Object.assign({}, DefaultConfig, ConfigExtensions);
-    let Sites = Config.Sites;
+    const Config = Object.assign({}, DefaultConfig, ConfigExtensions);
+    const Sites = Config.Sites;
 
     for(let [siteName, Site] of Object.entries(Sites)) {
       
       let aliasOf = Site.aliasOf;
 
-      if(typeof(aliasOf) !== 'undefined') {
-        Sites[siteName] = Object.assign(Site, Sites[aliasOf]);
+      if(isDefined(aliasOf)) {
+
+        Sites[siteName] = Object.assign(Site, Sites[aliasOf], {domain: aliasOf});
+      }
+      else {
+        
+        Site.domain = siteName;
       }
     }
 
     return Config;
   }
 
-  const setupApp = (Config) => {
+  const setupDomainRewrite = (Config) => {
+    
+    const DomainToSiteMap = {};
+    const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const domainPattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
+    
+    Object.entries(Config.Sites).forEach(([siteName, Site]) => (DomainToSiteMap[siteName] = Site.domain));
+    
+    app.all('*', function (req, res, next) {
+      
+      let domain = (domainPattern.exec(`.${req.headers.host}`) || [])[1];
+      let site = DomainToSiteMap[domain];
+      req.url = `/${site}${req.url}`;
+      
+      isDefined(site) ? next() : respondError(req, res);
+    });
+  }
 
+  const setupSites = (Config) => {
+    
     let Sites = Config.Sites;
 
     for(let [siteName, Site] of Object.entries(Sites)) {
@@ -38,19 +70,20 @@ module.exports = new function() {
       let sitePrefix = siteName ? `/${siteName}` : '';
       let siteDir = Site.dir || `${Config.sitesDir}${sitePrefix}`;
         
-      if(typeof(Site.aliasOf) === 'undefined') {
+      if(! isDefined(Site.aliasOf)) {
         
         app.use(sitePrefix, Site.static ? express.static(siteDir) : require(siteDir));
       }
     }
+  }
 
-    app.all('*', function (req, res) {
-      
-      console.log(req.url);
-      res.write(req.url);
-      res.statusCode = 200;
-      res.end();
-    });
+  const setupMissingURLs = () =>  app.all('*', respondError);
+
+  const setupApp = (Config) => {
+
+    setupDomainRewrite(Config);
+    setupSites(Config);
+    setupMissingURLs();
   }
 
   this.start = (ConfigExtensions = {}) => {
