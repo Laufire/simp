@@ -1,1 +1,6 @@
+# General
+.*
+!.git*
+
+# Stack
 /node_modules
