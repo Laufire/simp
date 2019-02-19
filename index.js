@@ -3,6 +3,8 @@ const fs = require('fs');
 const express = require('express');
 
 const DefaultConfig = require('./config/default');
+const {isDefined, iterateObject } = require('./modules/utils');
+
 const app = express();
 
 module.exports = new function() {
@@ -12,12 +14,11 @@ module.exports = new function() {
   };
 
   /* Helpers */
-  const respondError = (req, res) => {
+  const respondError = (dummy, res) => {
+    
     res.statusCode = 400;
     res.end();
   }
-
-  const isDefined = (x) => typeof(x) !== 'undefined';
 
   /* Tasks */
   const normalizeConfig = (ConfigExtensions) => {
@@ -28,7 +29,7 @@ module.exports = new function() {
       type: 'static',
     };
 
-    for(let [siteName, Site] of Object.entries(Sites)) {
+    iterateObject(Sites, (siteName, Site) => {
       
       Site = Object.assign({}, DefaultSiteValues, Site);
       let aliasOf = Site.aliasOf;
@@ -43,7 +44,7 @@ module.exports = new function() {
       }
 
       Sites[siteName] = Site;
-    }
+    });
 
     return Config;
   }
@@ -56,8 +57,10 @@ module.exports = new function() {
     const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const domainPattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
     
-    Object.entries(Config.Sites).forEach(([siteName, Site]) => {
+    iterateObject(Config.Sites, (siteName, Site) => {
+      
       if(shouldRewrite(Site)) {
+        
         RewritableSites[siteName] = Site.domain;
       }
     });
@@ -76,16 +79,16 @@ module.exports = new function() {
     
     let Sites = Config.Sites;
 
-    for(let [siteName, Site] of Object.entries(Sites)) {
+    iterateObject(Sites, (siteName, Site) => {
       
       let sitePrefix = siteName ? `/${siteName}` : '';
       let siteDir = Site.dir || `${Config.sitesDir}${sitePrefix}`;
         
       if(! isDefined(Site.aliasOf)) {
-        
+ 
         app.use(sitePrefix, Site.type == 'static' ? express.static(siteDir) : require(siteDir));
       }
-    }
+    });
   }
 
   const setupMissingURLs = () =>  app.all('*', respondError);
@@ -105,6 +108,7 @@ module.exports = new function() {
     Config.sitesDir = `${process.cwd()}/${Config.sitesDir}`;
 
     if(Config.https) {
+      
       Options.key = fs.readFileSync(Config.SSLPaths.key);
       Options.cert = fs.readFileSync(Config.SSLPaths.cert);
 
