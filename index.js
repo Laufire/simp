@@ -7,7 +7,6 @@ const app = express();
 
 module.exports = new function() {
 
-  const self = this;
   const Server = {
     Options: {}
   };
@@ -25,36 +24,48 @@ module.exports = new function() {
 
     const Config = Object.assign({}, DefaultConfig, ConfigExtensions);
     const Sites = Config.Sites;
+    const DefaultSiteValues = {
+      type: 'static',
+    };
 
     for(let [siteName, Site] of Object.entries(Sites)) {
       
+      Site = Object.assign({}, DefaultSiteValues, Site);
       let aliasOf = Site.aliasOf;
 
       if(isDefined(aliasOf)) {
 
-        Sites[siteName] = Object.assign(Site, Sites[aliasOf], {domain: aliasOf});
+        Site = Object.assign(Site, Sites[aliasOf], {domain: aliasOf});
       }
       else {
         
         Site.domain = siteName;
       }
+
+      Sites[siteName] = Site;
     }
 
     return Config;
   }
 
-  const setupDomainRewrite = (Config) => {
+  const setupURLRewrite = (Config) => {
     
-    const DomainToSiteMap = {};
+    const RewritableSites = {};
+    const SiteTypesToRewrite = ['static', 'api'];
+    const shouldRewrite = (Site) => SiteTypesToRewrite.includes(Site.type);
     const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const domainPattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
     
-    Object.entries(Config.Sites).forEach(([siteName, Site]) => (DomainToSiteMap[siteName] = Site.domain));
+    Object.entries(Config.Sites).forEach(([siteName, Site]) => {
+      if(shouldRewrite(Site)) {
+        RewritableSites[siteName] = Site.domain;
+      }
+    });
     
     app.all('*', function (req, res, next) {
       
       let domain = (domainPattern.exec(`.${req.headers.host}`) || [])[1];
-      let site = DomainToSiteMap[domain];
+      let site = RewritableSites[domain];
       req.url = `/${site}${req.url}`;
       
       isDefined(site) ? next() : respondError(req, res);
@@ -72,7 +83,7 @@ module.exports = new function() {
         
       if(! isDefined(Site.aliasOf)) {
         
-        app.use(sitePrefix, Site.static ? express.static(siteDir) : require(siteDir));
+        app.use(sitePrefix, Site.type == 'static' ? express.static(siteDir) : require(siteDir));
       }
     }
   }
@@ -81,7 +92,7 @@ module.exports = new function() {
 
   const setupApp = (Config) => {
 
-    setupDomainRewrite(Config);
+    setupURLRewrite(Config);
     setupSites(Config);
     setupMissingURLs();
   }
@@ -89,7 +100,7 @@ module.exports = new function() {
   this.start = (ConfigExtensions = {}) => {
 
     let Options = Server.Options;
-    let Config = normalizeConfig(ConfigExtensions)
+    let Config = normalizeConfig(ConfigExtensions);
 
     Config.sitesDir = `${process.cwd()}/${Config.sitesDir}`;
 
