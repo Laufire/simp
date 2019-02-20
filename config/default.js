@@ -11,5 +11,14 @@ module.exports = {
 
   sitesDir: './sites', // #Note: This has to be a relative path to the CWD.
 
-  Sites: {},
+  Sites: {
+
+    /* #Tags: Example.
+    'domainName': {
+      type: 'api' || 'static',
+      dir: 'defaults to <sitesDir>/<domainName>',
+      aliases: ['an', 'array', 'of', 'subdomains'],
+    }
+    */
+  },
 }

@@ -1,89 +1,93 @@
 const fs = require('fs');
-
 const express = require('express');
 
 const { iterateObject } = require('./modules/utils');
 const { normalizeConfig } = require('./modules/normalizer');
 const SiteTypeHandlers = require('./modules/handlers');
 
-const app = express();
-
 module.exports = new function() {
 
   const self = this;
 
-  /* Data */
-  const Server = {
-    Options: {}
-  };
-
   /* State */
   const DomainHandlers = self.DomainHandlers = {};
 
-  /* Helpers */
-  const errorHandler = (dummy, res) => {
-    
-    res.statusCode = 400;
-    res.end();
-  }
-
-  /* Tasks */
-  self.setupHandlers = (Config) => {
-    
-    iterateObject(Config.Sites, (siteName, Site) => {
+  /* Private Methods */
+  self.setupHandlers = (Config) => iterateObject(Config.Sites, (siteName, Site) => {
       
-      let siteDomains = Site.aliases || [];
-      let handler = SiteTypeHandlers[Site.type](Site);
-      
-      siteDomains.push(siteName);
-      
-      siteDomains.forEach(domain => DomainHandlers[domain] = handler);
-    });
-  };
-
-  self.setupDomainRouting = (Config) => {
+    let siteDomains = Site.aliases || [];
+    let handler = SiteTypeHandlers[Site.type](Site);
     
-    const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const domainPattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
+    siteDomains.push(siteName);
     
-    app.all('*', function (req, res, next) {
+    siteDomains.forEach(domain => DomainHandlers[domain] = handler);
+  });
 
-      let domain = (domainPattern.exec(`.${req.headers.host}`) || [])[1];
+  self.setupDomainRouting = (app, Config) => {
+    
+    const getSubDomain = (() => {
+      
+      const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const subdomainCapturePattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
+      const emptyResults = [];
+
+      return (domain) => (subdomainCapturePattern.exec(`.${domain || ''}`) || emptyResults)[1];
+    })()
+    const errorHandler = (dummy, res) => {
+    
+      res.statusCode = 400;
+      res.end();
+    }
+    
+    app.all('*', (req, res, next) => {
+
+      let domain = getSubDomain(req.headers.host);
       let handler = DomainHandlers[domain] || errorHandler;
       
       handler(req, res, next);
     });
   }
 
-  self.setupApp = (Config) => {
+  self.createServer = (app, Config) => {
 
-    self.setupHandlers(Config);
-    self.setupDomainRouting(Config);
-  }
-
-  self.start = (ConfigExtensions = {}) => {
-
-    let Options = Server.Options;
-    
-    let Config = normalizeConfig(ConfigExtensions);
+    let port;
+    let createServer;
 
     if(Config.https) {
       
-      Options.key = fs.readFileSync(Config.SSLPaths.key);
-      Options.cert = fs.readFileSync(Config.SSLPaths.cert);
+      port = 443;
 
-      Server.port = 443;
-      Server.createServer = (listener) => require('https').createServer(Options, listener);
+      let Options = {
+        key: fs.readFileSync(Config.SSLPaths.key),
+        cert: fs.readFileSync(Config.SSLPaths.cert),
+      };
+
+      createServer = (listener) => require('https').createServer(Options, listener);
     }
     else {
       
-      Server.port = 80;
-      Server.createServer = require('http').createServer;
+      port = 80;
+      createServer = require('http').createServer;
     }
 
-    Server.port = ConfigExtensions.port || Server.port;
+    port = Config.port || port;
 
-    self.setupApp(Config);
-    Server.createServer(app).listen(Server.port);
+    return {
+      
+      start: () => createServer(app).listen(port)
+    }
+  }
+
+  /* Public Methods */
+  self.start = (ConfigExtensions = {}) => {
+
+    const app = express();
+    let Config = normalizeConfig(ConfigExtensions);
+    let Server = self.createServer(app, Config);
+
+    self.setupHandlers(Config);
+    self.setupDomainRouting(app, Config);
+
+    Server.start();
   }
 }
