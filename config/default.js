@@ -15,9 +15,10 @@ module.exports = {
 
     /* #Tags: Example.
     'domainName': {
-      type: 'api' || 'static',
+      type: 'api' || 'static || proxy',
       dir: 'defaults to <sitesDir>/<domainName>',
       aliases: ['an', 'array', 'of', 'subdomains'],
+      baseURL: 'http://some-domain/some-path' # Applies only to type -- proxy. Should be a URL without trailing slashes.
     }
     */
   },

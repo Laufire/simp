@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/Laufire/simp#readme",
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "request": "^2.88.0"
   }
 }
