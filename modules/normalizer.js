@@ -5,7 +5,13 @@ module.exports = new function() {
 
   this.normalizeConfig = (ConfigExtensions) => {
 
-    const Config = Object.assign({}, DefaultConfig, ConfigExtensions);
+    const Config = Object.assign({},
+      DefaultConfig,
+      {
+        port: ConfigExtensions.https ? 443 : 80
+      },
+      ConfigExtensions
+    );
     const Sites = Config.Sites;
     const DefaultSiteValues = {
       type: 'static',

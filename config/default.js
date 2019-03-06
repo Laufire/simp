@@ -1,7 +1,5 @@
 module.exports = {
   
-  port: 443,
-
   https: true,
 
   SSLPaths: {
