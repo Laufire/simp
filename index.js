@@ -40,7 +40,7 @@ module.exports = new function() {
     }
     
     app.all('*', (req, res, next) => {
-
+      
       let domain = getSubDomain(req.headers.host);
       let handler = DomainHandlers[domain] || errorHandler;
       
@@ -50,13 +50,10 @@ module.exports = new function() {
 
   self.createServer = (app, Config) => {
 
-    let port;
     let createServer;
 
     if(Config.https) {
       
-      port = 443;
-
       let Options = {
         key: fs.readFileSync(Config.SSLPaths.key),
         cert: fs.readFileSync(Config.SSLPaths.cert),
@@ -66,22 +63,19 @@ module.exports = new function() {
     }
     else {
       
-      port = 80;
       createServer = require('http').createServer;
     }
 
-    port = Config.port || port;
-
     return {
       
-      start: () => createServer(app).listen(port)
+      start: () => createServer(app).listen(Config.port)
     }
   }
 
   /* Public Methods */
   self.start = (ConfigExtensions = {}) => {
 
-    const app = express();
+    let app = express();
     let Config = normalizeConfig(ConfigExtensions);
     let Server = self.createServer(app, Config);
 
