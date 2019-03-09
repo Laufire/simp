@@ -10,40 +10,34 @@ module.exports = new function() {
   const self = this;
 
   /* State */
-  const DomainHandlers = self.DomainHandlers = {};
+  const SiteHandlers = self.SiteHandlers = {};
 
   /* Private Methods */
+  self.errorHandler = (dummy, res) => {
+  
+    res.statusCode = 400;
+    res.end();
+  }
+  
   self.setupHandlers = (Config) => iterateObject(Config.Sites, (siteName, Site) => {
       
-    let siteDomains = Site.aliases || [];
+    let siteNames = Site.aliases || [];
     let handler = SiteTypeHandlers[Site.type](Site);
     
-    siteDomains.push(siteName);
+    siteNames.push(siteName);
     
-    siteDomains.forEach(domain => DomainHandlers[domain] = handler);
+    siteNames.forEach(name => SiteHandlers[name] = handler);
   });
 
-  self.setupDomainRouting = (app, Config) => {
+  self.setupRouting = (app, Config) => {
     
-    const getSubDomain = (() => {
-      
-      const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const subdomainCapturePattern = new RegExp('^\\.?(.*)\.' + escapeRegExp(Config.baseDomain) + '$')
-      const emptyResults = [];
-
-      return (domain) => (subdomainCapturePattern.exec(`.${domain || ''}`) || emptyResults)[1];
-    })()
-    const errorHandler = (dummy, res) => {
-    
-      res.statusCode = 400;
-      res.end();
-    }
+    const getSiteName = require(`./modules/routers/${Config.Routing.type}`)(Config);
     
     app.all('*', (req, res, next) => {
       
-      let domain = getSubDomain(req.headers.host);
-      let handler = DomainHandlers[domain] || errorHandler;
-      
+      let siteName = getSiteName(req);
+      let handler = SiteHandlers[siteName] || self.errorHandler;
+
       handler(req, res, next);
     });
   }
@@ -80,7 +74,7 @@ module.exports = new function() {
     let Server = self.createServer(app, Config);
 
     self.setupHandlers(Config);
-    self.setupDomainRouting(app, Config);
+    self.setupRouting(app, Config);
 
     Server.start();
   }

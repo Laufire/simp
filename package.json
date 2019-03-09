@@ -1,6 +1,6 @@
 {
   "name": "simp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A simple web-server, intended to be a drop-in replacement for WAMP server, to serve static sites and API-s.",
   "main": "index.js",
   "scripts": {

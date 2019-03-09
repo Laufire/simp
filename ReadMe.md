@@ -9,3 +9,7 @@
 ## Decisions
 
 * The server runs only onn 443 when SSL is enabled, not on 80, as it's assumed to be redirected.
+
+## ToDo
+
+* Allow for path based routing.

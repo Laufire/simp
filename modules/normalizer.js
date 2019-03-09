@@ -1,6 +1,8 @@
 const DefaultConfig = require('../config/default');
 const { iterateObject } = require('../modules/utils');
 
+const AllowedRoutingTypes = ['domain', 'path'];
+
 module.exports = new function() {
 
   self = this;
@@ -31,12 +33,19 @@ module.exports = new function() {
     }
   }
 
+  this.validateConfig = (Config) => {
+    // #Later: Use JSON schema to validate the schema in detail.
+
+    console.assert(AllowedRoutingTypes.includes(Config.Routing.type));
+  }
+
   this.normalizeConfig = (ConfigExtensions) => {
 
     const Config = self.addDefaultConfig(ConfigExtensions);
 
     self.normalizeSites(Config);
     self.addInferedConfig(Config);
+    self.validateConfig(Config);
 
     return Config;
   }

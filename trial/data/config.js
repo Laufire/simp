@@ -1,6 +1,9 @@
 module.exports = {
 
-  baseDomain: 'localhost',
+  Routing: {
+    type: 'domain',
+    base: 'localhost',
+  },
 
   https: false,
 

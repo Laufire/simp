@@ -2,6 +2,11 @@ module.exports = {
   
   https: true,
 
+  Routing: {
+
+    type: 'domain',
+  },
+
   SSLPaths: {
     key: './data/ssl/privkey.pem', // #Note: The files names are the defaults of the SSL certificates provided Let's encrypt.
     cert: './data/ssl/cert.pem',
