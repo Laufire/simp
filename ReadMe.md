@@ -1,10 +1,10 @@
 # Simp
 
-  A simple web-server, intended to be a drop-in replacement for WAMP server, to serve static sites and API-s.
+	A simple web-server, intended to be a drop-in replacement for WAMP server, to serve static sites and API-s.
 
 ## License
 
-  MIT
+	MIT
 
 ## Decisions
 

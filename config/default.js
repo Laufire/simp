@@ -1,28 +1,28 @@
 module.exports = {
-  
-  https: true,
 
-  Routing: {
+	https: true,
 
-    type: 'domain',
-  },
+	Routing: {
 
-  SSLPaths: {
-    key: './data/ssl/privkey.pem', // #Note: The files names are the defaults of the SSL certificates provided Let's encrypt.
-    cert: './data/ssl/cert.pem',
-  },
+		type: 'domain',
+	},
 
-  sitesDir: './data/sites', // #Note: This has to be a relative path to the CWD.
+	SSLPaths: {
+		key: './data/ssl/privkey.pem', // #Note: The files names are the defaults of the SSL certificates provided Let's encrypt.
+		cert: './data/ssl/cert.pem',
+	},
 
-  Sites: {
+	sitesDir: './data/sites', // #Note: This has to be a relative path to the CWD.
 
-    /* #Tags: Example.
-    'domainName': {
-      type: 'api' || 'static || proxy',
-      dir: 'defaults to <sitesDir>/<domainName>',
-      aliases: ['an', 'array', 'of', 'subdomains'],
-      baseURL: 'http://some-domain/some-path' # Applies only to type -- proxy. Should be a URL without trailing slashes.
-    }
-    */
-  },
+	Sites: {
+
+		/* #Tags: Example.
+		'domainName': {
+			type: 'api' || 'static || proxy',
+			dir: 'defaults to <sitesDir>/<domainName>',
+			aliases: ['an', 'array', 'of', 'subdomains'],
+			baseURL: 'http://some-domain/some-path' # Applies only to type -- proxy. Should be a URL without trailing slashes.
+		}
+		*/
+	},
 }

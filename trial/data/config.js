@@ -1,15 +1,15 @@
 module.exports = {
 
-  Routing: {
-    type: 'domain',
-    base: 'localhost',
-  },
+	Routing: {
+		type: 'domain',
+		base: 'localhost',
+	},
 
-  https: false,
+	https: false,
 
-  Sites: {
-    www: {
-      aliases: [''],
-    },
-  },
+	Sites: {
+		www: {
+			aliases: [''],
+		},
+	},
 }

@@ -7,75 +7,75 @@ const SiteTypeHandlers = require('./modules/handlers');
 
 module.exports = new function() {
 
-  const self = this;
+	const self = this;
 
-  /* State */
-  const SiteHandlers = self.SiteHandlers = {};
+	/* State */
+	const SiteHandlers = self.SiteHandlers = {};
 
-  /* Private Methods */
-  self.errorHandler = (dummy, res) => {
-  
-    res.statusCode = 400;
-    res.end();
-  }
-  
-  self.setupHandlers = (Config) => iterateObject(Config.Sites, (siteName, Site) => {
-      
-    let siteNames = Site.aliases || [];
-    let handler = SiteTypeHandlers[Site.type](Site);
-    
-    siteNames.push(siteName);
-    
-    siteNames.forEach(name => SiteHandlers[name] = handler);
-  });
+	/* Private Methods */
+	self.errorHandler = (dummy, res) => {
 
-  self.setupRouting = (app, Config) => {
-    
-    const getSiteName = require(`./modules/routers/${Config.Routing.type}`)(Config);
-    
-    app.all('*', (req, res, next) => {
-      
-      let siteName = getSiteName(req);
-      let handler = SiteHandlers[siteName] || self.errorHandler;
+		res.statusCode = 400;
+		res.end();
+	}
 
-      handler(req, res, next);
-    });
-  }
+	self.setupHandlers = (Config) => iterateObject(Config.Sites, (siteName, Site) => {
 
-  self.createServer = (app, Config) => {
+		let siteNames = Site.aliases || [];
+		let handler = SiteTypeHandlers[Site.type](Site);
 
-    let createServer;
+		siteNames.push(siteName);
 
-    if(Config.https) {
-      
-      let Options = {
-        key: fs.readFileSync(Config.SSLPaths.key),
-        cert: fs.readFileSync(Config.SSLPaths.cert),
-      };
+		siteNames.forEach(name => SiteHandlers[name] = handler);
+	});
 
-      createServer = (listener) => require('https').createServer(Options, listener);
-    }
-    else {
-      
-      createServer = require('http').createServer;
-    }
+	self.setupRouting = (app, Config) => {
 
-    return {
-      
-      start: () => createServer(app).listen(Config.port)
-    }
-  }
+		const getSiteName = require(`./modules/routers/${Config.Routing.type}`)(Config);
 
-  /* Public Methods */
-  self.start = (ConfigExtensions = {}) => {
+		app.all('*', (req, res, next) => {
 
-    let app = express();
-    let Config = normalizeConfig(ConfigExtensions);
-    let Server = self.createServer(app, Config);
+			let siteName = getSiteName(req);
+			let handler = SiteHandlers[siteName] || self.errorHandler;
 
-    self.setupHandlers(Config);
-    self.setupRouting(app, Config);
+			handler(req, res, next);
+		});
+	}
 
-    Server.start();
-  }
+	self.createServer = (app, Config) => {
+
+		let createServer;
+
+		if(Config.https) {
+
+			let Options = {
+				key: fs.readFileSync(Config.SSLPaths.key),
+				cert: fs.readFileSync(Config.SSLPaths.cert),
+			};
+
+			createServer = (listener) => require('https').createServer(Options, listener);
+		}
+		else {
+
+			createServer = require('http').createServer;
+		}
+
+		return {
+
+			start: () => createServer(app).listen(Config.port)
+		}
+	}
+
+	/* Public Methods */
+	self.start = (ConfigExtensions = {}) => {
+
+		let app = express();
+		let Config = normalizeConfig(ConfigExtensions);
+		let Server = self.createServer(app, Config);
+
+		self.setupHandlers(Config);
+		self.setupRouting(app, Config);
+
+		Server.start();
+	}
 }
